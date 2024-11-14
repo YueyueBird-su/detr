@@ -320,6 +320,10 @@ def _max_by_axis(the_list):
 
 
 class NestedTensor(object):
+    """
+    嵌套张量是一个包含张量和掩码的元组，用于处理不同大小的图像。
+    """
+
     def __init__(self, tensors, mask: Optional[Tensor]):
         self.tensors = tensors  # 初始化张量
         self.mask = mask  # 初始化掩码
