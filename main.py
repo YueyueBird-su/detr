@@ -26,9 +26,11 @@ def get_args_parser():
     parser.add_argument("--weight_decay", default=1e-4, type=float)  # 权重衰减
     parser.add_argument("--epochs", default=300, type=int)  # 训练的总轮数
     parser.add_argument("--lr_drop", default=200, type=int)  # 学习率下降的轮数
+    # 梯度裁剪的最大范数，在训练过程中，这个参数会在 train_one_epoch 函数中被使用，用于防止梯度爆炸。
+    # 具体来说，它会限制梯度的最大范数，从而确保训练过程的稳定性。
     parser.add_argument(
         "--clip_max_norm", default=0.1, type=float, help="gradient clipping max norm"
-    )  # 梯度裁剪的最大范数
+    )
 
     # 模型参数
     parser.add_argument(
@@ -36,7 +38,7 @@ def get_args_parser():
         type=str,
         default=None,
         help="Path to the pretrained model. If set, only the mask head will be trained",
-    )  # 预训练模型的路径
+    )  # 预训练模型的路径，如果设置了这个参数，只有 mask head 会被训练。
     # 主干网络
     parser.add_argument(
         "--backbone",
@@ -48,7 +50,7 @@ def get_args_parser():
         "--dilation",
         action="store_true",
         help="If true, we replace stride with dilation in the last convolutional block (DC5)",
-    )  # 是否使用膨胀卷积
+    )  # 是否使用膨胀卷积，如果设置了这个参数，最后一个卷积块的 stride 会被 dilation 替代。
     parser.add_argument(
         "--position_embedding",
         default="sine",
@@ -56,6 +58,17 @@ def get_args_parser():
         choices=("sine", "learned"),
         help="Type of positional embedding to use on top of the image features",
     )  # 位置嵌入的类型
+    ## sine 和 learned 是两种不同的位置编码方式：
+    # Sine（正弦位置编码）：
+
+    # 使用固定的正弦和余弦函数生成位置编码。
+    # 位置编码是预定义的，不会在训练过程中更新。
+    # 这种方法不依赖于数据，适用于任何长度的序列。
+    # Learned（学习位置编码）：
+
+    # 位置编码是可训练的参数，会在训练过程中更新。
+    # 这种方法允许模型根据数据学习最优的位置编码。
+    # 可能更适合特定任务，但需要更多的训练数据和时间。
 
     # Transformer参数
     parser.add_argument(
@@ -81,7 +94,8 @@ def get_args_parser():
         default=256,
         type=int,
         help="Size of the embeddings (dimension of the transformer)",
-    )  # 嵌入的大小
+    )  # 嵌入的大小，设置Transformer 模型中隐藏层的维度。这个参数决定了模型中各层之间传递的向量的维度大小。
+    # 较大的 hidden_dim 可以增加模型的表达能力，但也会增加计算和存储的开销。
     parser.add_argument(
         "--dropout", default=0.1, type=float, help="Dropout applied in the transformer"
     )  # Dropout率
@@ -93,8 +107,10 @@ def get_args_parser():
     )  # 注意力头的数量
     parser.add_argument(
         "--num_queries", default=100, type=int, help="Number of query slots"
-    )  # 查询槽的数量
-    parser.add_argument("--pre_norm", action="store_true")  # 是否使用预归一化
+    )  # 查询查询槽的数量，每个查询向量会与编码器的输出进行交互，以生成最终的预测结果。查询向量的数量通常与模型需要检测的目标数量相关。
+    parser.add_argument(
+        "--pre_norm", action="store_true"
+    )  # 是否使用预归一化，当设置该参数时，模型会在每个子层的输入上应用 Layer Normalization，而不是在子层的输出上。这可以帮助稳定训练过程，特别是在深层网络中。
 
     # 分割参数
     parser.add_argument(
@@ -110,6 +126,7 @@ def get_args_parser():
         action="store_false",
         help="Disables auxiliary decoding losses (loss at each layer)",
     )  # 是否禁用辅助解码损失
+
     # 匹配器参数
     parser.add_argument(
         "--set_cost_class",
