@@ -56,21 +56,21 @@ class PositionEmbeddingSine(nn.Module):
             2 * (dim_t // 2) / self.num_pos_feats
         )  # 计算位置编码的温度参数
 
-        pos_x = x_embed[:, :, :, None] / dim_t  # 计算 x 轴位置编码
+        pos_x = x_embed[:, :, :, None] / dim_t  # 计算 x 轴位置编码 [b, h, w] -> [b, h, w, feat_dim]
         pos_y = y_embed[:, :, :, None] / dim_t  # 计算 y 轴位置编码
         pos_x = torch.stack(
             (pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4
         ).flatten(
             3
-        )  # 将 x 轴位置编码的正弦和余弦部分堆叠并展平 [b, c, h, w, 2] -> [b, c, h, w * 2]
+        )  # 将 x 轴位置编码的正弦和余弦部分堆叠并展平 [b, c, h, w//2, 2] -> [b, c, h, w]
         pos_y = torch.stack(
             (pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4
         ).flatten(
             3
-        )  # 将 y 轴位置编码的正弦和余弦部分堆叠并展平 [b, c, h, w, 2] -> [b, c, h, w * 2]
+        )  # 将 y 轴位置编码的正弦和余弦部分堆叠并展平 [b, h, w, c//2, 2] -> [b, h, w, c]
         pos = torch.cat((pos_y, pos_x), dim=3).permute(
             0, 3, 1, 2
-        )  # 将 x 和 y 轴位置编码拼接并调整维度顺序 [b, c, h, w * 4] -> [b, h, w, c]
+        )  # 将 x 和 y 轴位置编码拼接并调整维度顺序 [b, h, w, 2c] -> [b, 2c, h, 2]
         return pos  # 返回位置编码
 
 
